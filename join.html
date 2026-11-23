@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Join L4D2 server</title>
 <style>
   [hidden] { display: none !important; }
@@ -32,6 +35,7 @@
     <p id="singleAddr"></p>
     <a id="launch" class="btn" href="#">Launch L4D2</a>
     <a id="alt" class="btn alt" href="#">Backup: connect through Steam</a>
+    <button id="reload" class="alt" type="button">Reload page</button>
     <button id="copyConsole" class="alt" type="button">Copy console command</button>
     <button id="copyIp" class="alt" type="button">Copy IP:port</button>
   </section>
@@ -49,6 +53,10 @@
       navigator.clipboard.writeText(text).then(done, fail);
     } else { fail(); }
   }
+
+  // Reload button, and a full reload if the browser restores this page from its back/forward cache.
+  document.getElementById('reload').addEventListener('click', function () { location.reload(); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
 
   // Link format from the bot: ?ip=1.2.3.4&port=55511&n=SG%20%231&r=Singapore
   var q = new URLSearchParams(location.search);
@@ -77,8 +85,16 @@
     document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + hostPort, 'Console command'); });
     document.getElementById('copyIp').addEventListener('click', function () { copy(hostPort, 'IP:port'); });
     note.textContent = 'If the browser asks, allow it to open Steam.';
-    // Browsers may block this without a click, so the Launch button above is the fallback.
-    setTimeout(function () { location.href = steamUrl; }, 400);
+    function launch() {
+      try { location.href = steamUrl; }
+      catch (e) { note.className = 'note err'; note.textContent = 'Could not open Steam. Press Launch L4D2 or the Backup button.'; }
+    }
+    // Wait until the page has fully loaded, then try once. Browsers may block this without a click, so the buttons stay as fallbacks.
+    function start() {
+      setTimeout(launch, 400);
+      setTimeout(function () { note.textContent = 'If L4D2 did not start, press Launch L4D2 again, try the Backup button, or reload the page.'; }, 4000);
+    }
+    if (document.readyState === 'complete') { start(); } else { window.addEventListener('load', start); }
   } else if (q.has('ip') || q.has('port')) {
     note.className = 'note err';
     note.textContent = 'Invalid link. Go back to Discord and press the Join button on a server.';
