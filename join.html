@@ -17,6 +17,7 @@
   a.btn, button { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px; border: 0; border-radius: 8px;
     background: #1b9e3e; color: #fff; font-size: 1rem; cursor: pointer; text-decoration: none; }
   button.alt { background: #3a4048; }
+  .hint { color: #9aa3ad; font-size: .85rem; margin: 12px 0 0; }
   .count { font-size: 2.2rem; font-weight: 700; margin: 8px 0 0; }
   .note { color: #9aa3ad; font-size: .85rem; text-align: center; min-height: 1.2em; }
   .err { color: #ff8a8a; }
@@ -44,6 +45,7 @@
     <p id="singleAddr"></p>
     <a id="launch" class="btn" href="#">Launch L4D2</a>
     <button id="copyConsole" class="alt" type="button">Copy console command</button>
+    <p class="hint">Steam shows an error or nothing happens? Start L4D2, press the ~ key, paste the copied command and press Enter.</p>
   </section>
 
   <p id="note" class="note" hidden></p>
@@ -81,7 +83,8 @@
   var valid = ipOk && portOk;
 
   var hostPort = ip + ':' + port;
-  var steamUrl = 'steam://connect/' + hostPort;
+  // Starts L4D2 (Steam app 550) with +connect, so Steam does not need to look the server up first.
+  var steamUrl = 'steam://run/550//+connect%20' + hostPort;
 
   function copy(text, label) {
     function done() { note.className = 'note'; note.textContent = label + ' copied: ' + text; }
@@ -117,7 +120,7 @@
       try { location.href = steamUrl; }
       catch (e) { note.className = 'note err'; note.textContent = 'Could not open Steam. Press Launch L4D2.'; }
     }, 300);
-    setTimeout(function () { note.textContent = 'If L4D2 did not start, press Launch L4D2.'; }, 4000);
+    setTimeout(function () { note.textContent = 'If L4D2 did not start, press Launch L4D2, or use Copy console command and paste it in the L4D2 console.'; }, 4000);
   }
 
   // 5-second wait with a visible countdown.
