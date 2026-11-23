@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>L4D2 servers</title>
+<title>Join L4D2 server</title>
 <style>
   [hidden] { display: none !important; }
   body { font-family: system-ui, sans-serif; background: #15181c; color: #e8e8e8; margin: 0; padding: 24px 12px; }
@@ -25,7 +25,7 @@
 </head>
 <body>
 <main>
-  <h1>L4D2 servers</h1>
+  <h1>Join L4D2 server</h1>
 
   <section id="single" class="card big" hidden>
     <div id="singleTitle"></div>
@@ -33,11 +33,9 @@
     <a id="launch" class="btn" href="#">Launch L4D2</a>
     <button id="copyConsole" class="alt" type="button">Copy console command</button>
     <button id="copyIp" class="alt" type="button">Copy IP:port</button>
-    <p><a class="plain" id="all" href="#">Show all servers</a></p>
   </section>
 
-  <p id="note" class="note">Press Join to open L4D2 through Steam. If the browser asks, allow it to open Steam.</p>
-  <div id="list"></div>
+  <p id="note" class="note">Open this page from the Join button on a server in Discord.</p>
 </main>
 <script>
 (function () {
@@ -70,25 +68,6 @@
     } else { fail(); }
   }
 
-  // ----- full list -----
-  var list = document.getElementById('list');
-  REGIONS.forEach(function (r) {
-    list.appendChild(el('h2', null, r.name));
-    SERVERS.filter(function (s) { return s.region === r.name; }).forEach(function (s) {
-      var row = el('div', 'row');
-      row.appendChild(el('span', 'label', s.label));
-      row.appendChild(el('span', 'addr', s.ip + ':' + s.port));
-      var join = el('a', 'btn', 'Join');
-      join.setAttribute('href', steamUrl(s));
-      row.appendChild(join);
-      var cp = el('button', 'alt', 'Copy');
-      cp.setAttribute('type', 'button');
-      cp.addEventListener('click', function () { copy('connect ' + s.ip + ':' + s.port, s.label + ' console command'); });
-      row.appendChild(cp);
-      list.appendChild(row);
-    });
-  });
-
   // ----- single server from the link: ?s=SG1  or  ?ip=1.2.3.4&port=27015 -----
   var q = new URLSearchParams(location.search);
   var key = (q.get('s') || '').toUpperCase();
@@ -111,7 +90,6 @@
     var code = el('code', null, target.ip + ':' + target.port);
     document.getElementById('singleAddr').appendChild(code);
     document.getElementById('launch').setAttribute('href', steamUrl(target));
-    document.getElementById('all').setAttribute('href', location.pathname);
     document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + target.ip + ':' + target.port, 'Console command'); });
     document.getElementById('copyIp').addEventListener('click', function () { copy(target.ip + ':' + target.port, 'IP:port'); });
     note.textContent = 'If the browser asks, allow it to open Steam.';
@@ -119,7 +97,7 @@
     setTimeout(function () { location.href = steamUrl(target); }, 400);
   } else if (asked) {
     note.className = 'note err';
-    note.textContent = 'Unknown server. Pick one from the list below, or use ?s=SG1 to SG8, LA1 to LA8, AU1 to AU2.';
+    note.textContent = 'Unknown server. Go back to Discord and press the Join button on a server.';
   }
 })();
 </script>
