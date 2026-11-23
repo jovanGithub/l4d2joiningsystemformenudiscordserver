@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Join L4D2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:sans-serif;background:#111;color:#eee;text-align:center;padding:4rem 1rem}
+  a.btn,button.btn{display:inline-block;margin:.5rem;padding:.8rem 1.5rem;background:#1b9e3e;color:#fff;border:0;border-radius:8px;text-decoration:none;font-size:1rem;cursor:pointer}
+  button.alt{background:#333}
+  code{background:#222;padding:.1rem .4rem;border-radius:4px}
+</style>
+</head>
+<body>
+<h2 id="title">Launching Left 4 Dead 2...</h2>
+<p id="hint">If Steam doesn't open, click Join.</p>
+<div>
+  <a class="btn" id="join" href="#">Join</a>
+  <button class="btn alt" id="copy" type="button">Copy console command</button>
+</div>
+<p style="opacity:.6">Console command: <code id="cmd"></code></p>
+<script>
+  // Usage: join.html?s=SG1   (SG1-SG8, LA1-LA8, AU1-AU2). Old links ?s=1 to ?s=8 still mean SG #1 to #8.
+  // Only the servers listed below are allowed, so this page cannot redirect anywhere else.
+  var REGION_NAMES = { SG: "Singapore", LA: "Los Angeles", AU: "Sydney" };
+  var PORTS_8 = [55511, 55522, 55533, 55544, 55555, 55566, 55577, 55588];
+  var SERVERS = {};
+  function add(region, host, ip, ports) {
+    ports.forEach(function (port, i) {
+      SERVERS[region + (i + 1)] = { label: region + " #" + (i + 1), region: region, host: host, ip: ip, port: port };
+    });
+  }
+  add("SG", "sg.jdot.io", "103.159.64.18", PORTS_8);
+  add("LA", "la.jdot.io", "199.87.210.98", PORTS_8);
+  add("AU", "au.jdot.io", "203.96.177.199", [55511, 55522]);
+
+  var raw = (new URLSearchParams(location.search).get("s") || "").toUpperCase();
+  if (/^[1-8]$/.test(raw)) raw = "SG" + raw;
+  var s = Object.prototype.hasOwnProperty.call(SERVERS, raw) ? SERVERS[raw] : null;
+
+  var title = document.getElementById("title");
+  if (!s) {
+    title.textContent = "Unknown server.";
+    document.getElementById("hint").textContent = "Use ?s=SG1 to SG8, LA1 to LA8, or AU1 to AU2.";
+    document.getElementById("join").style.display = "none";
+    document.getElementById("copy").style.display = "none";
+  } else {
+    var addr = s.ip + ":" + s.port;
+    var steamUrl = "steam://connect/" + addr;
+    var consoleCmd = "connect " + addr;
+    title.textContent = "Launching Left 4 Dead 2 (" + s.label + " - " + REGION_NAMES[s.region] + ")...";
+    var join = document.getElementById("join");
+    join.href = steamUrl;
+    join.textContent = "Join " + s.label + " (" + addr + ")";
+    document.getElementById("cmd").textContent = consoleCmd;
+
+    // Copying needs a click (browser rule), so it is a button.
+    var copyBtn = document.getElementById("copy");
+    copyBtn.addEventListener("click", function () {
+      var done = function () { copyBtn.textContent = "Copied!"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(consoleCmd).then(done, function () { copyBtn.textContent = "Copy failed - select the text"; });
+      } else {
+        copyBtn.textContent = "Copy not supported - select the text";
+      }
+    });
+
+    setTimeout(function () { window.location.href = steamUrl; }, 300);
+  }
+</script>
+</body>
+</html>
