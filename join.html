@@ -16,7 +16,7 @@
   .addr { flex: 1; font-family: ui-monospace, Consolas, monospace; font-size: .9rem; word-break: break-all; }
   code { background: #0e1013; padding: 2px 8px; border-radius: 6px; }
   a.btn, button { padding: 8px 12px; border: 0; border-radius: 8px; background: #1b9e3e; color: #fff; font-size: .9rem; cursor: pointer; text-decoration: none; }
-  button.alt { background: #3a4048; }
+  button.alt, a.btn.alt { background: #3a4048; }
   .big a.btn, .big button { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px; font-size: 1rem; }
   .note { color: #9aa3ad; font-size: .85rem; text-align: center; min-height: 1.2em; }
   .err { color: #ff8a8a; }
@@ -31,6 +31,7 @@
     <div id="singleTitle"></div>
     <p id="singleAddr"></p>
     <a id="launch" class="btn" href="#">Launch L4D2</a>
+    <a id="alt" class="btn alt" href="#">Backup: connect through Steam</a>
     <button id="copyConsole" class="alt" type="button">Copy console command</button>
     <button id="copyIp" class="alt" type="button">Copy IP:port</button>
   </section>
@@ -62,7 +63,9 @@
 
   if (ipOk && portOk) {
     var hostPort = ip + ':' + port;
-    var steamUrl = 'steam://connect/' + hostPort;
+    // Starts L4D2 (Steam app 550) with +connect. The backup link uses Steam's plain connect handler.
+    var steamUrl = 'steam://run/550//+connect%20' + hostPort;
+    var altUrl = 'steam://connect/' + hostPort;
     var title = name ? (region ? name + ' - ' + region : name) : hostPort;
     document.getElementById('single').hidden = false;
     document.getElementById('singleTitle').textContent = title;
@@ -70,6 +73,7 @@
     code.textContent = hostPort;
     document.getElementById('singleAddr').appendChild(code);
     document.getElementById('launch').setAttribute('href', steamUrl);
+    document.getElementById('alt').setAttribute('href', altUrl);
     document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + hostPort, 'Console command'); });
     document.getElementById('copyIp').addEventListener('click', function () { copy(hostPort, 'IP:port'); });
     note.textContent = 'If the browser asks, allow it to open Steam.';
