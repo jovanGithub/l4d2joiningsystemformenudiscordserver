@@ -92,7 +92,7 @@
 
   var hostPort = ip + ':' + port;
   // Starts L4D2 (Steam app 550) with +connect, so Steam does not need to look the server up first.
-  var steamUrl = 'steam://run/550//+connect%20' + hostPort;
+  var steamUrl = 'steam://connect/' + hostPort;
 
   function copy(text, label) {
     function done() { note.className = 'note'; note.textContent = label + ' copied: ' + text; }
