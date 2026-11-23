@@ -9,54 +9,64 @@
 <title>Join L4D2 server</title>
 <style>
   [hidden] { display: none !important; }
-  body { font-family: system-ui, sans-serif; background: #15181c; color: #e8e8e8; margin: 0; padding: 24px 12px; }
+  body { font-family: system-ui, sans-serif; background: #15181c; color: #e8e8e8; margin: 0; padding: 24px 12px 96px; }
   main { max-width: 560px; margin: 0 auto; }
   h1 { font-size: 1.4rem; margin: 0 0 16px; text-align: center; }
-  h2 { font-size: 1.05rem; margin: 24px 0 8px; color: #9fdcae; }
   .card { background: #1f2329; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 8px; }
-  .row { display: flex; align-items: center; gap: 8px; background: #1f2329; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
-  .label { font-weight: 600; min-width: 52px; }
-  .addr { flex: 1; font-family: ui-monospace, Consolas, monospace; font-size: .9rem; word-break: break-all; }
   code { background: #0e1013; padding: 2px 8px; border-radius: 6px; }
-  a.btn, button { padding: 8px 12px; border: 0; border-radius: 8px; background: #1b9e3e; color: #fff; font-size: .9rem; cursor: pointer; text-decoration: none; }
-  button.alt, a.btn.alt { background: #3a4048; }
-  .big a.btn, .big button { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px; font-size: 1rem; }
+  a.btn, button { display: block; width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px; border: 0; border-radius: 8px;
+    background: #1b9e3e; color: #fff; font-size: 1rem; cursor: pointer; text-decoration: none; }
+  button.alt { background: #3a4048; }
+  .count { font-size: 2.2rem; font-weight: 700; margin: 8px 0 0; }
   .note { color: #9aa3ad; font-size: .85rem; text-align: center; min-height: 1.2em; }
   .err { color: #ff8a8a; }
-  a.plain { color: #9fdcae; }
+  .discord { position: fixed; left: 16px; bottom: 16px; z-index: 10; max-width: calc(100% - 32px); box-sizing: border-box;
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    background: #5865f2; color: #fff; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: left;
+    box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+  .discord svg, .discord img { width: 40px; height: 40px; flex: none; }
+  .discord img { border-radius: 50%; object-fit: cover; }
+  .discord svg { display: none; }
+  .discord small { display: block; font-weight: 400; opacity: .85; font-size: .8rem; }
 </style>
 </head>
 <body>
 <main>
   <h1>Join L4D2 server</h1>
 
-  <section id="single" class="card big" hidden>
+  <section id="loading" class="card">
+    <div>Getting your server ready...</div>
+    <p id="count" class="count">5</p>
+  </section>
+
+  <section id="single" class="card" hidden>
     <div id="singleTitle"></div>
     <p id="singleAddr"></p>
     <a id="launch" class="btn" href="#">Launch L4D2</a>
-    <a id="alt" class="btn alt" href="#">Backup: connect through Steam</a>
-    <button id="reload" class="alt" type="button">Reload page</button>
     <button id="copyConsole" class="alt" type="button">Copy console command</button>
-    <button id="copyIp" class="alt" type="button">Copy IP:port</button>
   </section>
 
-  <p id="note" class="note">Open this page from the Join button on a server in Discord.</p>
+  <p id="note" class="note" hidden></p>
+
+  <a class="discord" href="https://discord.gg/Kpq8HxdZw" target="_blank" rel="noopener noreferrer">
+    <img src="logo.png" alt="Menu server logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <svg viewBox="0 0 32 32" aria-hidden="true" fill="none">
+      <rect x="2" y="4" width="28" height="19" rx="6" fill="#fff"/>
+      <path d="M10 23 L9 29 L16 23 Z" fill="#fff"/>
+      <circle cx="11.5" cy="13.5" r="2.4" fill="#5865f2"/>
+      <circle cx="20.5" cy="13.5" r="2.4" fill="#5865f2"/>
+    </svg>
+    <span>Join the Menu Discord<small>discord.gg/Kpq8HxdZw</small></span>
+  </a>
 </main>
 <script>
 (function () {
+  var WAIT_SECONDS = 5; // everyone waits this long before the page shows and tries to open Steam
+
+  var loading = document.getElementById('loading');
+  var countEl = document.getElementById('count');
+  var single = document.getElementById('single');
   var note = document.getElementById('note');
-
-  function copy(text, label) {
-    function done() { note.className = 'note'; note.textContent = label + ' copied: ' + text; }
-    function fail() { note.className = 'note err'; note.textContent = 'Copy failed. Select and copy it manually: ' + text; }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, fail);
-    } else { fail(); }
-  }
-
-  // Reload button, and a full reload if the browser restores this page from its back/forward cache.
-  document.getElementById('reload').addEventListener('click', function () { location.reload(); });
-  window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
 
   // Link format from the bot: ?ip=1.2.3.4&port=55511&n=SG%20%231&r=Singapore
   var q = new URLSearchParams(location.search);
@@ -68,37 +78,57 @@
   var ipOk = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(ip) &&
              ip.split('.').every(function (o) { return Number(o) <= 255; });
   var portOk = /^\d{1,5}$/.test(port) && Number(port) >= 1 && Number(port) <= 65535;
+  var valid = ipOk && portOk;
 
-  if (ipOk && portOk) {
-    var hostPort = ip + ':' + port;
-    // Starts L4D2 (Steam app 550) with +connect. The backup link uses Steam's plain connect handler.
-    var steamUrl = 'steam://run/550//+connect%20' + hostPort;
-    var altUrl = 'steam://connect/' + hostPort;
-    var title = name ? (region ? name + ' - ' + region : name) : hostPort;
-    document.getElementById('single').hidden = false;
-    document.getElementById('singleTitle').textContent = title;
+  var hostPort = ip + ':' + port;
+  var steamUrl = 'steam://connect/' + hostPort;
+
+  function copy(text, label) {
+    function done() { note.className = 'note'; note.textContent = label + ' copied: ' + text; }
+    function fail() { note.className = 'note err'; note.textContent = 'Copy failed. Select and copy it manually: ' + text; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fail);
+    } else { fail(); }
+  }
+
+  function finish() {
+    loading.hidden = true;
+    note.hidden = false;
+
+    if (!valid) {
+      note.className = 'note err';
+      note.textContent = (q.has('ip') || q.has('port'))
+        ? 'Invalid link. Go back to Discord and press the Connect button on a server.'
+        : 'Open this page from the Connect button on a server in Discord.';
+      return;
+    }
+
+    document.getElementById('singleTitle').textContent = name ? (region ? name + ' - ' + region : name) : hostPort;
     var code = document.createElement('code');
     code.textContent = hostPort;
     document.getElementById('singleAddr').appendChild(code);
     document.getElementById('launch').setAttribute('href', steamUrl);
-    document.getElementById('alt').setAttribute('href', altUrl);
     document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + hostPort, 'Console command'); });
-    document.getElementById('copyIp').addEventListener('click', function () { copy(hostPort, 'IP:port'); });
-    note.textContent = 'If the browser asks, allow it to open Steam.';
-    function launch() {
+    single.hidden = false;
+    note.textContent = 'Opening L4D2 through Steam. If the browser asks, allow it.';
+
+    // Open Steam right after the page shows. Browsers may block this without a click, so the button stays as the fallback.
+    setTimeout(function () {
       try { location.href = steamUrl; }
-      catch (e) { note.className = 'note err'; note.textContent = 'Could not open Steam. Press Launch L4D2 or the Backup button.'; }
-    }
-    // Wait until the page has fully loaded, then try once. Browsers may block this without a click, so the buttons stay as fallbacks.
-    function start() {
-      setTimeout(launch, 400);
-      setTimeout(function () { note.textContent = 'If L4D2 did not start, press Launch L4D2 again, try the Backup button, or reload the page.'; }, 4000);
-    }
-    if (document.readyState === 'complete') { start(); } else { window.addEventListener('load', start); }
-  } else if (q.has('ip') || q.has('port')) {
-    note.className = 'note err';
-    note.textContent = 'Invalid link. Go back to Discord and press the Join button on a server.';
+      catch (e) { note.className = 'note err'; note.textContent = 'Could not open Steam. Press Launch L4D2.'; }
+    }, 300);
+    setTimeout(function () { note.textContent = 'If L4D2 did not start, press Launch L4D2.'; }, 4000);
   }
+
+  // 5-second wait with a visible countdown.
+  var left = WAIT_SECONDS;
+  countEl.textContent = String(left);
+  var timer = setInterval(function () {
+    left -= 1;
+    if (left > 0) { countEl.textContent = String(left); return; }
+    clearInterval(timer);
+    finish();
+  }, 1000);
 })();
 </script>
 </body>
