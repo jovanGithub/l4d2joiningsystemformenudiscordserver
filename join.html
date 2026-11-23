@@ -39,27 +39,8 @@
 </main>
 <script>
 (function () {
-  var REGIONS = [
-    { code: 'SG', name: 'Singapore', ip: '103.159.64.18', ports: [55511, 55522, 55533, 55544, 55555, 55566, 55577, 55588] },
-    { code: 'LA', name: 'Los Angeles, USA', ip: '199.87.210.98', ports: [55511, 55522, 55533, 55544, 55555, 55566, 55577, 55588] },
-    { code: 'AU', name: 'Sydney, Australia', ip: '203.96.177.199', ports: [55511, 55522] }
-  ];
-  var SERVERS = [];
-  REGIONS.forEach(function (r) {
-    r.ports.forEach(function (p, i) {
-      SERVERS.push({ key: r.code + (i + 1), label: r.code + ' #' + (i + 1), region: r.name, ip: r.ip, port: String(p) });
-    });
-  });
-
   var note = document.getElementById('note');
 
-  function el(tag, cls, text) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
-  function steamUrl(s) { return 'steam://connect/' + s.ip + ':' + s.port; }
   function copy(text, label) {
     function done() { note.className = 'note'; note.textContent = label + ' copied: ' + text; }
     function fail() { note.className = 'note err'; note.textContent = 'Copy failed. Select and copy it manually: ' + text; }
@@ -68,36 +49,35 @@
     } else { fail(); }
   }
 
-  // ----- single server from the link: ?s=SG1  or  ?ip=1.2.3.4&port=27015 -----
+  // Link format from the bot: ?ip=1.2.3.4&port=55511&n=SG%20%231&r=Singapore
   var q = new URLSearchParams(location.search);
-  var key = (q.get('s') || '').toUpperCase();
   var ip = q.get('ip') || '';
   var port = q.get('port') || '';
-  var asked = q.has('s') || q.has('ip') || q.has('port');
-  var target = null;
+  var name = (q.get('n') || '').slice(0, 40);
+  var region = (q.get('r') || '').slice(0, 40);
 
-  SERVERS.forEach(function (s) { if (s.key === key) target = s; });
-  if (!target && ip && port) {
-    var ipOk = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(ip) &&
-               ip.split('.').every(function (o) { return Number(o) <= 255; });
-    var portOk = /^\d{1,5}$/.test(port) && Number(port) >= 1 && Number(port) <= 65535;
-    if (ipOk && portOk) target = { label: ip + ':' + port, region: '', ip: ip, port: port };
-  }
+  var ipOk = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(ip) &&
+             ip.split('.').every(function (o) { return Number(o) <= 255; });
+  var portOk = /^\d{1,5}$/.test(port) && Number(port) >= 1 && Number(port) <= 65535;
 
-  if (target) {
+  if (ipOk && portOk) {
+    var hostPort = ip + ':' + port;
+    var steamUrl = 'steam://connect/' + hostPort;
+    var title = name ? (region ? name + ' - ' + region : name) : hostPort;
     document.getElementById('single').hidden = false;
-    document.getElementById('singleTitle').textContent = target.label + (target.region ? ' - ' + target.region : '');
-    var code = el('code', null, target.ip + ':' + target.port);
+    document.getElementById('singleTitle').textContent = title;
+    var code = document.createElement('code');
+    code.textContent = hostPort;
     document.getElementById('singleAddr').appendChild(code);
-    document.getElementById('launch').setAttribute('href', steamUrl(target));
-    document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + target.ip + ':' + target.port, 'Console command'); });
-    document.getElementById('copyIp').addEventListener('click', function () { copy(target.ip + ':' + target.port, 'IP:port'); });
+    document.getElementById('launch').setAttribute('href', steamUrl);
+    document.getElementById('copyConsole').addEventListener('click', function () { copy('connect ' + hostPort, 'Console command'); });
+    document.getElementById('copyIp').addEventListener('click', function () { copy(hostPort, 'IP:port'); });
     note.textContent = 'If the browser asks, allow it to open Steam.';
     // Browsers may block this without a click, so the Launch button above is the fallback.
-    setTimeout(function () { location.href = steamUrl(target); }, 400);
-  } else if (asked) {
+    setTimeout(function () { location.href = steamUrl; }, 400);
+  } else if (q.has('ip') || q.has('port')) {
     note.className = 'note err';
-    note.textContent = 'Unknown server. Go back to Discord and press the Join button on a server.';
+    note.textContent = 'Invalid link. Go back to Discord and press the Join button on a server.';
   }
 })();
 </script>
